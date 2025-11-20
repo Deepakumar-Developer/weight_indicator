@@ -2,13 +2,14 @@
 
 const int LOADCELL_DOUT_PIN = 4; // Connect to HX711 DOUT (Data)
 const int LOADCELL_SCK_PIN = 3;  // Connect to HX711 SCK (Clock)
+// Pin Configuration 
 const int green_pin = 12;
 const int yellow_pin = 11;
 const int red_pin = 10;
-
-const int constantWeight = 100;
-const int diffValue = 20;
-const int uptoValue = 30;
+// Weight Configuration 
+const int constantWeight = 100; 
+const int diffValue = 2;
+const int uptoValue = 10;
 
 // Initialize the HX711 library object
 HX711 scale;
@@ -25,12 +26,9 @@ void setup() {
   if (scale.is_ready()) {
     Serial.println("HX711 is connected and ready.");
   } else {
-    // If this error shows, check your VCC/GND/DOUT/SCK wiring
     Serial.println("ERROR: HX711 not found. Check your wiring.");
   }
 
-  // STEP 1: Taring (Zeroing the scale)
-  // This takes an average of readings to set the current weight as the zero point (offset).
   Serial.print("Taring... Please remove all weight from the sensor.");
   scale.tare();
   Serial.println(" Done. The scale is now zeroed.");
@@ -38,38 +36,37 @@ void setup() {
   pinMode(red_pin,OUTPUT);
   pinMode(yellow_pin,OUTPUT);
 
-  // STEP 2: Setting the Scale Factor (Crucial for calibration)
-  // *** This value MUST be found via calibration (see notes below). ***
-  // The value 2280.0 is a common starting point, but yours will be different.
   scale.set_scale(374.9705882352941);
   Serial.println("----------------------------------------------");
   Serial.println("Place a known weight on the sensor for reading...");
 }
 
 void loop() {
-  // get_units(int times) returns a stable reading (average of 'times' readings)
-  // which is already converted using the scale factor and offset (tare).
   float weight = scale.get_units(10); // Average 10 readings for stability
 
   // Print the final weight reading
   Serial.print("Weight (Units/Grams): ");
   Serial.println(weight, 0); 
+
   if(weight >= (constantWeight-diffValue) && weight <= (constantWeight+diffValue)) {
+    // Green Glow -> 98 to 102
     digitalWrite(green_pin, HIGH);
     digitalWrite(yellow_pin,LOW);
     digitalWrite(red_pin,LOW);
   } else if(weight < (constantWeight-diffValue) && weight >= (constantWeight-(diffValue+uptoValue))) {
-    digitalWrite(yellow_pin, HIGH);
+		// Yello Glow -> 88 to 97
+		digitalWrite(yellow_pin, HIGH);
     digitalWrite(green_pin,LOW);
     digitalWrite(red_pin,LOW);
   } else if(weight > (constantWeight+diffValue) && weight <= (constantWeight+(diffValue+uptoValue))) {
-    digitalWrite(red_pin, HIGH);
+		// Red Glow -> 103 to 112
+		digitalWrite(red_pin, HIGH);
     digitalWrite(green_pin,LOW);
     digitalWrite(yellow_pin,LOW);
   } else {
+		// All Light off when the weight not in 88 to 112
     digitalWrite(green_pin,LOW);
     digitalWrite(yellow_pin,LOW);
     digitalWrite(red_pin,LOW);
   }
-
 }
